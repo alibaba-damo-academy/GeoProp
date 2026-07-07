@@ -1,0 +1,389 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>GeoProp: Grounding Robot State in Vision</title>
+    <meta
+      name="description"
+      content="GeoProp is a lightweight adapter that grounds robot proprioception in visual feature space through geometric projection, localized FiLM modulation, and predictive kinematic sampling."
+    />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <a class="brand" href="#top" aria-label="GeoProp home">
+        <span class="brand-mark"></span>
+        <span>GeoProp</span>
+      </a>
+      <nav class="nav-links" aria-label="Primary navigation">
+        <a href="#method">Method</a>
+        <a href="#results">Results</a>
+        <a href="#analysis">Analysis</a>
+      </nav>
+    </header>
+
+    <main id="top">
+      <section class="hero section">
+        <div class="hero-heading">
+          <p class="eyebrow">Project page</p>
+          <h1><span>GeoProp:</span> Grounding Robot State in Vision for Generalist Manipulation</h1>
+          <div class="author-list" aria-label="Authors">
+            <span>Guoyang Zhao<sup>1,*</sup></span>
+            <span>Quanhao Qian<sup>2,3,*</sup></span>
+            <span>Gongjie Zhang<sup>4</sup></span>
+            <span>Wenhao Li<sup>5</sup></span>
+            <span>Jiuniu Wang<sup>2,3</sup></span>
+            <span>Xiaowei Lu<sup>2,3</sup></span>
+            <span>Deli Zhao<sup>2,3</sup></span>
+            <span>Ran Xu<sup>2,3,&#9993;</sup></span>
+          </div>
+          <div class="affiliation-list" aria-label="Affiliations">
+            <span><sup>1</sup>Tongji University</span>
+            <span><sup>2</sup>DAMO Academy, Alibaba Group</span>
+            <span><sup>3</sup>HuPan Lab</span>
+            <span><sup>4</sup>Alibaba Group</span>
+            <span><sup>5</sup>Nanyang Technological University</span>
+          </div>
+          <div class="author-note"><sup>*</sup>Equal contribution. &nbsp; <sup>&#9993;</sup>Corresponding author.</div>
+          <p class="lead">
+            GeoProp turns proprioception from an isolated state vector into image-grounded visual tokens by
+            projecting the end-effector into the policy's feature grid.
+          </p>
+          <div class="button-row">
+            <a class="button primary" href="./assets/paper.pdf">Paper</a>
+            <span class="button disabled" aria-disabled="true">Code coming soon</span>
+          </div>
+        </div>
+        <section class="abstract-panel" aria-labelledby="abstract-title">
+          <p class="eyebrow">Abstract</p>
+          <h2 id="abstract-title">Abstract</h2>
+          <p>
+            Proprioception is fundamental to robotic manipulation, yet standard fusion methods often treat it as an
+            isolated vector lacking explicit alignment with visual tokens. Without a direct correspondence between 3D
+            kinematics and 2D feature maps, manipulation policies struggle to ground the robot's state within the scene,
+            frequently underperforming even vision-only baselines. To address this, we introduce GeoProp, a lightweight,
+            plug-and-play adapter that aligns proprioception with vision through explicit geometric grounding and spatial
+            feature sampling. GeoProp projects the robot state onto the image plane to sample localized visual features,
+            constructing a grounded state token. It then injects state-derived spatial priors into the corresponding
+            visual features via FiLM modulation. To capture motion intent, GeoProp further samples features at a
+            short-horizon predicted coordinate derived from recent kinematics, providing look-ahead visual context.
+            Across 67 tasks, GeoProp improves Diffusion Policy by 8.7% on 63 simulation tasks and &pi;<sub>0</sub> by
+            4.0% on the RoboTwin subset, and yields a 10.6% average gain across both policy families in the real world,
+            while adding only 2-3% to the parameter count. These results demonstrate that GeoProp is a simple yet
+            high-impact inductive bias for generalist embodied policies.
+          </p>
+        </section>
+        <div id="core-evidence" class="hero-teaser">
+          <div class="hero-core-panel">
+            <div class="core-copy-row">
+              <p class="eyebrow">Comparison with standard proprioception fusion</p>
+              <h2>Explicit state-token grounding.</h2>
+              <p>
+                Vanilla fusion treats proprioception as a global vector. GeoProp anchors robot state to the projected
+                end-effector region, so state tokens inherit local visual semantics.
+              </p>
+            </div>
+            <figure class="figure-card heatmap-video hero-heatmap">
+              <div class="heatmap-sync" data-sync-group="pi0-heatmaps">
+                <div class="heatmap-row">
+                  <div class="heatmap-label">
+                    <span>Vanilla &pi;<sub>0</sub></span>
+                    <small>global state fusion</small>
+                  </div>
+                  <video data-sync-video="pi0-heatmaps" src="./assets/heatmap_baseline_pi0.mp4" autoplay muted loop playsinline preload="metadata"></video>
+                </div>
+                <div class="heatmap-row emphasized">
+                  <div class="heatmap-label">
+                    <span>GeoProp-&pi;<sub>0</sub></span>
+                    <small>grounded token fusion</small>
+                  </div>
+                  <video data-sync-video="pi0-heatmaps" src="./assets/heatmap_geoprop_pi0.mp4" autoplay muted loop playsinline preload="metadata"></video>
+                </div>
+              </div>
+              <figcaption>
+                Synchronized heatmap comparison: vanilla attention remains diffuse, while GeoProp localizes around the gripper and manipulated objects.
+              </figcaption>
+            </figure>
+          </div>
+          <div class="result-summary" aria-label="Key results">
+            <div class="task-count-card">
+              <span>Total evaluation</span>
+              <strong>67</strong>
+              <em>simulation and real-world tasks</em>
+            </div>
+            <div class="policy-result-grid">
+              <article class="policy-result-card">
+                <div class="policy-card-header">
+                  <span>Diffusion Policy</span>
+                  <strong>DP</strong>
+                </div>
+                <div class="policy-result-row">
+                  <span>Simulation, ResNet-18</span>
+                  <b>66.8 -> 75.3</b>
+                  <em>+8.5</em>
+                </div>
+                <div class="policy-result-row">
+                  <span>Simulation, ViT-Base</span>
+                  <b>62.0 -> 71.0</b>
+                  <em>+9.0</em>
+                </div>
+                <div class="policy-result-row">
+                  <span>Real-world</span>
+                  <b>38.8 -> 50.0</b>
+                  <em>+11.2</em>
+                </div>
+              </article>
+              <article class="policy-result-card">
+                <div class="policy-card-header">
+                  <span>Vision-Language-Action</span>
+                  <strong>&pi;<sub>0</sub></strong>
+                </div>
+                <div class="policy-result-row">
+                  <span>Simulation</span>
+                  <b>64.0 -> 68.0</b>
+                  <em>+4.0</em>
+                </div>
+                <div class="policy-result-row">
+                  <span>Real-world</span>
+                  <b>43.8 -> 53.8</b>
+                  <em>+10.0</em>
+                </div>
+              </article>
+            </div>
+          </div>
+          <p class="metric-note">All values are success rates or absolute success-rate gains over Vanilla.</p>
+        </div>
+      </section>
+
+      <section id="method" class="section method-section">
+        <div class="section-heading wide">
+          <p class="eyebrow">Method</p>
+          <h2>A lightweight adapter for image-grounded proprioception.</h2>
+          <p>
+            GeoProp is a lightweight, plug-and-play adapter that aligns proprioception with vision through explicit
+            geometric grounding and spatial feature sampling. It keeps the downstream policy unchanged while converting
+            robot state into image-native tokens sampled from the vision backbone.
+          </p>
+        </div>
+
+        <figure class="figure-card method-figure">
+          <img src="./assets/architecture_raw.png" alt="GeoProp architecture overview" />
+          <figcaption>
+            GeoProp projects the 3D end-effector state into the vision feature grid, samples the aligned visual cell,
+            and locally FiLM-modulates that cell with the full proprioceptive state. The grounded and predictive tokens
+            are appended to DP or &pi;<sub>0</sub> without changing the policy backbone.
+          </figcaption>
+        </figure>
+
+        <div class="method-component-grid">
+          <article>
+            <span class="step-number">01</span>
+            <h3>Geometric projection and sampling</h3>
+            <p>
+              Camera calibration maps the 3D end-effector position to a 2D feature-grid coordinate. GeoProp samples the
+              co-located visual feature to form the grounded state token.
+            </p>
+          </article>
+          <article>
+            <span class="step-number">02</span>
+            <h3>Spatially aligned feature modulation</h3>
+            <p>
+              The proprioceptive state predicts FiLM parameters that modulate only the aligned feature cell, injecting
+              pose, orientation, history, and gripper state without changing unrelated regions.
+            </p>
+          </article>
+          <article>
+            <span class="step-number">03</span>
+            <h3>Predictive kinematic sampling</h3>
+            <p>
+              Recent end-effector history predicts a short-horizon waypoint. Sampling at its projected coordinate gives
+              the policy a compact visual cue for near-future motion intent.
+            </p>
+          </article>
+        </div>
+      </section>
+
+      <section id="results" class="section results-section">
+        <div class="section-heading wide">
+          <p class="eyebrow">Results</p>
+          <h2>Consistent gains across policies, backbones, and deployment settings.</h2>
+          <p>
+            Across MetaWorld, RLBench, and RoboTwin, GeoProp improves over vanilla proprioception fusion, indicating
+            that geometric state grounding is not tied to a single simulator or task family. We report Diffusion Policy
+            results across 63 simulation tasks, results with the &pi;<sub>0</sub> policy on RoboTwin, and real-world
+            Mobile ALOHA evaluation with both policy families.
+          </p>
+        </div>
+
+        <div class="paper-table-stack table-image-stack">
+          <figure class="paper-table-card result-table-figure">
+            <div class="table-heading">
+              <span class="label">Diffusion Policy</span>
+              <h3>Simulation benchmarks, 63 tasks</h3>
+            </div>
+            <div class="table-image-wrap">
+              <img src="./assets/results_dp_table.png" alt="Diffusion Policy success rates across simulation benchmarks" />
+            </div>
+          </figure>
+
+          <div class="table-pair result-image-pair">
+            <figure class="paper-table-card result-table-figure">
+              <div class="table-heading">
+                <span class="label">VLA policy</span>
+                <h3><span class="math-symbol">&pi;<sub>0</sub></span> on RoboTwin</h3>
+              </div>
+              <div class="table-image-wrap">
+                <img src="./assets/results_pi0_table.png" alt="Success rates on pi-zero across RoboTwin tasks" />
+              </div>
+            </figure>
+
+            <figure class="paper-table-card result-table-figure">
+              <div class="table-heading">
+                <span class="label">Mobile ALOHA</span>
+                <h3>Real-world success rates</h3>
+              </div>
+              <div class="table-image-wrap compact-realworld-table">
+                <img src="./assets/results_realworld_table.png" alt="Real-world Mobile ALOHA success rates" />
+              </div>
+            </figure>
+          </div>
+        </div>
+
+        <p class="result-note">
+          GeoProp improves over vanilla proprioception fusion across simulation and real-world settings. The gains are
+          obtained with only a small parameter overhead in the Diffusion Policy experiments, suggesting that the effect
+          comes primarily from geometric alignment rather than model size.
+        </p>
+
+        <div class="realworld-video-panel">
+          <div class="table-heading video-heading">
+            <span class="label">Real-world rollouts</span>
+            <h3>Mobile ALOHA demonstrations across four household tasks</h3>
+          </div>
+          <div class="realworld-video-grid">
+            <figure>
+              <video src="./assets/realworld_demo_paper.mp4" poster="./assets/realworld_demo_paper_poster.jpg" autoplay muted loop playsinline preload="metadata"></video>
+              <figcaption>Paper Toss</figcaption>
+            </figure>
+            <figure>
+              <video src="./assets/realworld_demo_coffee.mp4" poster="./assets/realworld_demo_coffee_poster.jpg" autoplay muted loop playsinline preload="metadata"></video>
+              <figcaption>Coffee Retrieval</figcaption>
+            </figure>
+            <figure>
+              <video src="./assets/realworld_demo_desk.mp4" poster="./assets/realworld_demo_desk_poster.jpg" autoplay muted loop playsinline preload="metadata"></video>
+              <figcaption>Desk Clearing</figcaption>
+            </figure>
+            <figure>
+              <video src="./assets/realworld_demo_table.mp4" poster="./assets/realworld_demo_table_poster.jpg" autoplay muted loop playsinline preload="metadata"></video>
+              <figcaption>Table Cleaning</figcaption>
+            </figure>
+          </div>
+          <p class="realworld-video-note">
+            Videos show Diffusion Policy rollouts; the table above reports both Diffusion Policy and &pi;<sub>0</sub>
+            real-world success rates.
+          </p>
+        </div>
+      </section>
+
+      <section id="analysis" class="section analysis-section">
+        <div class="section-heading wide">
+          <p class="eyebrow">Analysis</p>
+          <h2>What GeoProp changes inside visual policy learning.</h2>
+          <p>
+            We analyze GeoProp from three complementary angles: whether projection remains reliable under calibration
+            noise, whether grounded tokens improve state-vision alignment, and whether the sampled token carries richer
+            local perception around the end-effector.
+          </p>
+        </div>
+
+        <div class="analysis-stack">
+          <article class="analysis-card analysis-card-wide">
+            <div class="analysis-card-copy">
+              <span class="label muted">Calibration robustness</span>
+              <h3>Projection is useful under moderate camera-robot drift.</h3>
+              <p>
+                GeoProp relies on camera intrinsics and extrinsics to select the aligned feature cell, so we perturb
+                camera extrinsics only at evaluation time. Performance degrades gradually as projection error grows, but
+                remains above Vanilla and No-Proprio under mild-to-moderate drift, up to 2.5 cm translation error and
+                1.5 degrees rotation error in the reported setting.
+              </p>
+            </div>
+            <div class="analysis-plot-grid">
+              <figure>
+                <img src="./assets/calibration_translation_web.jpg" alt="Translation calibration robustness plot" />
+                <figcaption>Translation drift shifts the sampled feature cell away from the interaction region.</figcaption>
+              </figure>
+              <figure>
+                <img src="./assets/calibration_rotation_web.jpg" alt="Rotation calibration robustness plot" />
+                <figcaption>Pitch and yaw are more harmful because they move the projection across image regions.</figcaption>
+              </figure>
+            </div>
+          </article>
+
+          <article class="analysis-card analysis-card-split">
+            <div class="analysis-card-copy">
+              <span class="label muted">Modality alignment</span>
+              <h3>Grounded state tokens make proprioception visible to the image stream.</h3>
+              <p>
+                Vanilla fusion injects proprioception as a global vector, so the policy must learn state-vision
+                correspondence implicitly. GeoProp projects the end-effector into the feature grid and samples the
+                co-located visual token, making proprioception image-native. The heatmaps show this effect directly:
+                activations become more concentrated around the gripper and manipulated objects instead of spreading
+                across background regions.
+              </p>
+            </div>
+            <figure class="analysis-media">
+              <video src="./assets/heatmap_parallel_clip.mp4" poster="./assets/heatmap_parallel_preview.jpg" autoplay muted loop playsinline preload="metadata"></video>
+              <figcaption>
+                Parallel attention visualization. GeoProp localizes policy attention around the robot-object interaction
+                region, supporting the modality-alignment mechanism.
+              </figcaption>
+            </figure>
+          </article>
+
+          <article class="analysis-card analysis-card-wide perceptual-card">
+            <div class="analysis-card-copy">
+              <span class="label muted">Local perceptual evidence</span>
+              <h3>The state token carries nearby scene context, not only coordinates.</h3>
+              <p>
+                The projected end-effector cell is sampled from the vision backbone, so the resulting token contains
+                local image semantics around the gripper. This lets the policy condition on information that is missing
+                from raw proprioception alone, such as nearby objects, contact surfaces, and whether the end-effector is
+                positioned around the task-relevant target.
+              </p>
+            </div>
+            <figure class="analysis-media grounding-media">
+              <img src="./assets/grounding_sequence_strip.png" alt="Projected end-effector grounding region across task progress" />
+              <figcaption>
+                The orange grounding region follows the projected end-effector through task progress, while covering the
+                local object context used to construct the grounded state token.
+              </figcaption>
+            </figure>
+          </article>
+        </div>
+      </section>
+
+      <section class="section citation-section">
+        <div class="section-heading">
+          <p class="eyebrow">Citation</p>
+          <h2>BibTeX</h2>
+        </div>
+        <pre id="bibtex"><code>@inproceedings{zhao2026geoprop,
+  title     = {GeoProp: Grounding Robot State in Vision for Generalist Manipulation},
+  author    = {Zhao, Guoyang and Qian, Quanhao and Zhang, Gongjie and Li, Wenhao and Wang, Jiuniu and Lu, Xiaowei and Zhao, Deli and Xu, Ran},
+  booktitle = {Project Page},
+  year      = {2026}
+}</code></pre>
+        <button class="button copy-button" type="button" data-copy-target="bibtex">Copy BibTeX</button>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <p>GeoProp: Grounding Robot State in Vision for Generalist Manipulation.</p>
+      <p>Code and experiment details will be released upon publication.</p>
+    </footer>
+
+    <script src="./script.js"></script>
+  </body>
+</html>
